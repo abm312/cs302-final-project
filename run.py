@@ -7,6 +7,8 @@ import numpy as np
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--config", type=str, default="config.yaml")
+    parser.add_argument("--robot-type", type=str, default="voxel", choices=["voxel", "ring", "wheel"],
+                        help="Structure: voxel (grid), ring, or wheel (rolling circle)")
     args = parser.parse_args()
 
     # Load the configuration
@@ -15,8 +17,7 @@ if __name__ == "__main__":
     # Set the random seed for reproducibility
     np.random.seed(config["seed"])
     # Randomly sample robots
-    # NOTE: the number of robots should match the number of parallel simulations allocated in the simulator config
-    robots = load_robots(num_robots=config["simulator"]["n_sims"])
+    robots = load_robots(num_robots=config["simulator"]["n_sims"], robot_type=args.robot_type)
 
     # Extract the number of masses and springs in each robot
     num_masses = [robot["n_masses"] for robot in robots]
@@ -59,7 +60,7 @@ if __name__ == "__main__":
         robot = top_3_robots[i]
         control_params = top_3_control_params[i]
         robot["control_params"] = control_params
-        # Save the max dimensions used during training so visualizer can recreate the same memory allocation setup in the simulator
+        robot["robot_type"] = args.robot_type
         robot["max_n_masses"] = max_num_masses
         robot["max_n_springs"] = max_num_springs
         np.save(f"robot_{i}.npy", robot)

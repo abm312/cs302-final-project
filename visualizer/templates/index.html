@@ -28,6 +28,7 @@
         let activations = [];
         let centerOfMass = [0, 0];
         let currentStep = 0;
+        let robotType = 'voxel';  // 'voxel' | 'ring' | 'wheel' for rendering style
         
         // UI elements
         const actualFpsDisplay = document.getElementById('actualFps');
@@ -145,46 +146,41 @@
         }
         
         function draw() {
-            // Clear canvas - light blue-gray background
-            ctx.fillStyle = '#c5d5e0';
+            // Dark premium background
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGrad.addColorStop(0, '#0f0f1a');
+            bgGrad.addColorStop(0.6, '#16162a');
+            bgGrad.addColorStop(1, '#1a1b2e');
+            ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw ground grid to show movement
-            const gridSpacing = 0.5; // Grid every 0.5 world units
-            const numLines = Math.ceil(canvas.width / 600 / gridSpacing) + 2;
+            const scale = 600;
+            const gridSpacing = 0.5;
+            const numLines = Math.ceil(canvas.width / scale / gridSpacing) + 2;
             const startX = Math.floor(centerOfMass[0] / gridSpacing) * gridSpacing - numLines/2 * gridSpacing;
-            
             const groundY = worldToScreen(0, 0.02).y;
             
-            // Draw vertical grid lines - medium blue
-            ctx.strokeStyle = '#6b8ca3';
-            ctx.lineWidth = 2;
+            // Subtle grid
+            ctx.strokeStyle = 'rgba(80, 90, 120, 0.25)';
+            ctx.lineWidth = 1;
             for (let i = 0; i < numLines; i++) {
                 const worldX = startX + i * gridSpacing;
                 const screenPos = worldToScreen(worldX, 0);
-                
                 ctx.beginPath();
                 ctx.moveTo(screenPos.x, groundY);
                 ctx.lineTo(screenPos.x, canvas.height);
                 ctx.stroke();
             }
             
-            // Draw tick marks on ground line (every 0.5 units) - dark blue
-            ctx.strokeStyle = '#3d5a6b';
-            ctx.lineWidth = 3;
-            for (let i = 0; i < numLines; i++) {
-                const worldX = startX + i * gridSpacing;
-                const screenPos = worldToScreen(worldX, 0);
-                
-                ctx.beginPath();
-                ctx.moveTo(screenPos.x, groundY - 8);
-                ctx.lineTo(screenPos.x, groundY + 8);
-                ctx.stroke();
-            }
-            
-            // Draw main ground line - darker blue
-            ctx.strokeStyle = '#4a6b80';
-            ctx.lineWidth = 3;
+            // Ground: soft gradient strip
+            const groundGrad = ctx.createLinearGradient(0, groundY - 30, 0, canvas.height);
+            groundGrad.addColorStop(0, 'rgba(60, 65, 90, 0.4)');
+            groundGrad.addColorStop(0.15, 'rgba(45, 50, 70, 0.6)');
+            groundGrad.addColorStop(1, 'rgba(30, 33, 48, 0.9)');
+            ctx.fillStyle = groundGrad;
+            ctx.fillRect(0, groundY - 20, canvas.width, canvas.height - groundY + 20);
+            ctx.strokeStyle = 'rgba(120, 140, 180, 0.5)';
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, groundY);
             ctx.lineTo(canvas.width, groundY);
@@ -192,39 +188,77 @@
             
             if (positions.length === 0) return;
             
-            // Draw springs
-            ctx.lineWidth = 3;
-            for (let i = 0; i < springs.length; i++) {
-                const spring = springs[i];
-                const p1 = positions[spring[0]];
-                const p2 = positions[spring[1]];
-                
-                if (!p1 || !p2) continue;
-                
-                const s1 = worldToScreen(p1[0], p1[1]);
-                const s2 = worldToScreen(p2[0], p2[1]);
-                
-                // Color by activation
-                const act = activations[i] !== undefined ? activations[i] : 0.5;
-                ctx.strokeStyle = getColorFromScale(act);
-                
-                ctx.beginPath();
-                ctx.moveTo(s1.x, s1.y);
-                ctx.lineTo(s2.x, s2.y);
-                ctx.stroke();
-            }
+            const isWheel = (robotType === 'wheel' || robotType === 'ring') && positions.length >= 6;
             
-            // Draw masses
-            ctx.fillStyle = '#FFD166';
-            for (let i = 0; i < positions.length; i++) {
-                const pos = positions[i];
-                if (!pos) continue;
+            if (isWheel) {
+                // Wheel: center and radius from current positions
+                let cx = 0, cy = 0;
+                for (let i = 0; i < positions.length; i++) {
+                    cx += positions[i][0];
+                    cy += positions[i][1];
+                }
+                cx /= positions.length;
+                cy /= positions.length;
+                let radius = 0;
+                for (let i = 0; i < positions.length; i++) {
+                    const dx = positions[i][0] - cx, dy = positions[i][1] - cy;
+                    radius = Math.max(radius, Math.sqrt(dx*dx + dy*dy));
+                }
+                radius = Math.max(radius, 0.05);
                 
-                const screen = worldToScreen(pos[0], pos[1]);
+                const sc = worldToScreen(cx, cy);
+                const sr = radius * scale;
                 
+                // Radial gradient: dark center, bright rim (amber/gold)
+                const wheelGrad = ctx.createRadialGradient(sc.x - sr*0.3, sc.y - sr*0.3, 0, sc.x, sc.y, sr);
+                wheelGrad.addColorStop(0, '#2d2416');
+                wheelGrad.addColorStop(0.4, '#8b6914');
+                wheelGrad.addColorStop(0.75, '#d4a84b');
+                wheelGrad.addColorStop(1, '#f0c14b');
+                ctx.fillStyle = wheelGrad;
                 ctx.beginPath();
-                ctx.arc(screen.x, screen.y, 5, 0, 2 * Math.PI);
+                ctx.arc(sc.x, sc.y, sr + 4, 0, 2 * Math.PI);
                 ctx.fill();
+                
+                // Rim highlight
+                ctx.strokeStyle = 'rgba(255, 220, 150, 0.9)';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(sc.x, sc.y, sr, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // Inner shadow for depth
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(sc.x, sc.y, sr - 2, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else {
+                // Sticks (voxel)
+                ctx.lineWidth = 3;
+                for (let i = 0; i < springs.length; i++) {
+                    const spring = springs[i];
+                    const p1 = positions[spring[0]];
+                    const p2 = positions[spring[1]];
+                    if (!p1 || !p2) continue;
+                    const s1 = worldToScreen(p1[0], p1[1]);
+                    const s2 = worldToScreen(p2[0], p2[1]);
+                    const act = activations[i] !== undefined ? activations[i] : 0.5;
+                    ctx.strokeStyle = getColorFromScale(act);
+                    ctx.beginPath();
+                    ctx.moveTo(s1.x, s1.y);
+                    ctx.lineTo(s2.x, s2.y);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = '#e8b84b';
+                for (let i = 0; i < positions.length; i++) {
+                    const pos = positions[i];
+                    if (!pos) continue;
+                    const screen = worldToScreen(pos[0], pos[1]);
+                    ctx.beginPath();
+                    ctx.arc(screen.x, screen.y, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
             }
         }
         
@@ -239,7 +273,8 @@
                 
                 if (msg.type === 'topology') {
                     springs = msg.springs;
-                    console.log(`Loaded robot: ${msg.n_masses} masses, ${msg.n_springs} springs`);
+                    robotType = msg.robot_type || 'voxel';
+                    console.log(`Loaded robot: ${msg.n_masses} masses, ${msg.n_springs} springs, type=${robotType}`);
                 } else if (msg.type === 'step') {
                     positions = msg.positions;
                     activations = msg.activations;

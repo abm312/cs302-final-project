@@ -17,3 +17,49 @@ This repository provides a physical simulation platform for studying automatic d
 2. Next review `config.yaml`. This includes a number of parameters, only a small number of which you should consider modifying. 
 3. Review `robot.py`. This code illustrates how random robot designs can be sampled and explains the key constraints to keep in mind when representing robots for the simulator. You can also visualize designs in `visualize_robots.ipynb`. 
 4. Finally, try to run the code: `python run.py`. This will generate some results files that you can visualize with `plot_fitness.ipynb` and `visualizer.py`. 
+
+## Final Project Extension
+
+This fork adds a "robust mover" experiment on top of the default ALife-Sim workflow.
+
+- `ga_run.py` evolves voxel robot morphologies for locomotion.
+- `robust_mover.py` evaluates bodies across two terrain presets: `normal` and `slippery`.
+- `plot_robust_results.py` generates plots for the four required comparison modes.
+- `robust_outputs_run2/` contains the final saved outputs used for presentation and sharing.
+
+The four required modes are:
+
+1. Before evolution, before learning
+2. Before evolution, after learning
+3. After evolution, before learning
+4. After evolution, after learning
+
+To reproduce the final robust mover experiment:
+
+```bash
+python robust_mover.py \
+  --config config.yaml \
+  --output-dir robust_outputs_final \
+  --pop-size 10 \
+  --generations 4 \
+  --envs normal,slippery \
+  --visual-env normal \
+  --eval-seeds 5 \
+  --learning-steps 20 \
+  --sim-steps 700 \
+  --seed 7
+```
+
+To generate plots from an output folder:
+
+```bash
+python plot_robust_results.py --input-dir robust_outputs_run2
+```
+
+To visualize one saved robot:
+
+```bash
+python visualizer.py \
+  --input robust_outputs_run2/robust_after_evo_after_learn.npy \
+  --config robust_outputs_run2/config_normal.yaml
+```

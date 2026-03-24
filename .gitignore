@@ -2,3 +2,6 @@
 *.cpython*
 *.pyc
 /pycache/
+Miniconda3-latest-MacOSX-arm64.sh
+robust_outputs_smoke/
+robust_outputs_final/

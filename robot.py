@@ -8,8 +8,38 @@ MASK_DIM = 8
 # NOTE: this is very important as the simulator physics are configured to use this scale, more or less.
 SCALE = 0.1 
 
-def load_robots(num_robots):
+def load_robots(num_robots, robot_type="voxel"):
+    """robot_type: 'voxel' (default grid), 'ring', or 'wheel' (stiffer rolling ring)."""
+    if robot_type in ("ring", "wheel"):
+        return [sample_wheel_robot() for _ in range(num_robots)]
     return [sample_robot() for _ in range(num_robots)]
+
+
+def sample_wheel_robot(n=14, radius=3.2):
+    """Wheel: n masses on a circle, ring springs + crossing spokes for stiffness so it rolls."""
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    x = radius * np.cos(angles)
+    y = radius * np.sin(angles)
+    masses = np.stack([x, y], axis=1).astype(np.float32) * SCALE
+    springs = []
+    # Ring
+    for i in range(n):
+        j = (i + 1) % n
+        springs.append([min(i, j), max(i, j)])
+    # Spokes (opposite points) so the wheel holds shape and rolls
+    for i in range(n // 2):
+        j = i + n // 2
+        s = [min(i, j), max(i, j)]
+        if s not in springs:
+            springs.append(s)
+    springs = np.array(springs, dtype=np.int32)
+    return {
+        "n_masses": n,
+        "n_springs": len(springs),
+        "masses": masses,
+        "springs": springs,
+    }
+
 
 # Randomly sample a binary mask of size MASK_DIM x MASK_DIM
 # Convert the binary mask to a mass-spring robot geometry

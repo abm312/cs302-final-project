@@ -56,12 +56,13 @@ def stream():
     global n_masses_cached, n_springs_cached
     
     def event_stream():
-        # Send initial topology
+        # Send initial topology (robot_type for wheel vs stick rendering)
         topology = {
             "type": "topology",
             "springs": robot["springs"].tolist(),
             "n_masses": int(n_masses_cached),
             "n_springs": int(n_springs_cached),
+            "robot_type": robot.get("robot_type", "voxel"),
         }
         yield f"data: {json.dumps(topology)}\n\n"
         
