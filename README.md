@@ -27,6 +27,34 @@ This fork adds a "robust mover" experiment on top of the default ALife-Sim workf
 - `plot_robust_results.py` generates plots for the four required comparison modes.
 - `robust_outputs_run2/` contains the final saved outputs used for presentation and sharing.
 
+## What I Changed
+
+Starting from the default ALife-Sim repository, I extended the project in a few main ways for my final project:
+
+1. I added morphology evolution with a genetic algorithm so robot body shapes can improve across generations.
+2. I added a "robust mover" experiment that evaluates robot bodies on both a normal floor and a slippery floor, instead of only using one terrain setting.
+3. I organized the project around the four required comparison modes:
+   before evolution / before learning,
+   before evolution / after learning,
+   after evolution / before learning,
+   after evolution / after learning.
+4. I saved the final experiment outputs, plots, and robot files so the results can be reproduced and visualized directly from this repository.
+5. I also made small visualization and robot-generation updates to support the final demos.
+
+## Where The Edited Code Is
+
+If you want to inspect the code that was added or changed for this project, start with these files:
+
+- `ga_run.py`: added to evolve voxel robot morphologies with a genetic algorithm.
+- `robust_mover.py`: added for the full final-project pipeline, including robust evaluation, four-mode export, and saved results.
+- `plot_robust_results.py`: added to generate the bar chart and GA-history plots from experiment outputs.
+- `robot.py`: edited to support additional robot sampling options used during experimentation.
+- `run.py`: edited to support choosing robot types from the command line.
+- `visualizer.py`: edited so saved robots from the new experiments can be visualized correctly.
+- `visualizer/templates/index.html` and `visualizer/static/style.css`: edited to improve the project visualizer.
+- `plot_fitness.ipynb`: edited for plotting and inspecting learning results.
+- `robust_outputs_run2/`: final experiment outputs used in the shared public version of the project.
+
 The four required modes are:
 
 1. Before evolution, before learning
